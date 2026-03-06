@@ -3,8 +3,6 @@ unit snake;
 uses
   node;
 
-
-
 interface
 type
   TSnake = class(TNode)
@@ -14,12 +12,11 @@ type
     begin
       inherited Create(AX, AY, ANext);
     end;
-    procedure Move(AX, AY: Integer);
-    procedure CheckInput;
+    function Move(AX, AY, ASegs: Integer): Boolean;
 
   private
-    procedure WallCollision;
-    procedure SelfCollision;
+    function SelfCollision: Boolean;
+    function WallCollision: Boolean;
   end;
 
 
@@ -31,46 +28,33 @@ implementation
     FNext := new TNode(AX + 1, AY, nil); // eins rechts vom Kopf der Schlange
   end;
 
-  procedure TSnake.WallCollision;
+  function TSnake.WallCollision: Boolean;
   begin
-    if (FX < 0) or (FX >= 20) or (FY < 0) or (FY >= 20) then
-      raise Exception.Create('Game Over: Gegen die Wand gelaufen!');
+    Result := (FX < 0) or (FX >= 20) or (FY < 0) or (FY >= 20); // wenn true dann kollison
   end;
 
-  procedure TSnake.SelfCollision;
+  function TSnake.SelfCollision: Boolean;
   var
     Current: TNode;
   begin
-    Current := FNext;
+    Result := False;  
+    Current := FNext;   
+
     while Current <> nil do
     begin
-      if (Current.FX = FX) and (Current.FY = FY) then
-        raise Exception.Create('Game Over: Gegen sich selbst gelaufen!');
-      Current := Current.FNext;
-    end;
-  end;
-
-  procedure TSnake.CheckInput;
-  var
-    Ch: Char;
-  begin
-    if KeyPressed then
-    begin
-      Ch := ReadKey;
-      case Ch of
-        'w', 'W': Move(FX, FY - 1);
-        's', 'S': Move(FX, FY + 1);
-        'a', 'A': Move(FX - 1, FY);
-        'd', 'D': Move(FX + 1, FY);
-        #72: Move(FX, FY - 1);  // Up arrow
-        #80: Move(FX, FY + 1);  // Down arrow
-        #75: Move(FX - 1, FY);  // Left arrow
-        #77: Move(FX + 1, FY);  // Right arrow
+    
+      if (Current.X = Self.X) and (Current.Y = Self.Y) then
+      begin
+        Result := True;  
+        Exit;
       end;
+      Current := Current.Next;
     end;
   end;
 
-  procedure TSnake.Move(AX, AY: Integer);
+
+  // AX und AY sind die neuen Koordinaten vom neuen Head, AGrow ist wahr, wenn Apfel gefressen
+  function TSnake.Move(AX, AY, AGrow: Boolean): Boolean;
   { Erstellt einen neuen Kopf der Schlange und entfernt das letzte Segment, um die Bewegung zu simulieren. }
   var
     NewHead: TNode;
@@ -79,14 +63,17 @@ implementation
     NewHead := new TNode(AX, AY, FNext); 
     FNext := NewHead; 
 
-    
+
     Current := FNext;
     while (Current.FNext <> nil) and (Current.FNext.FNext <> nil) do
       Current := Current.FNext;
-    if Current.FNext <> nil then
-      Current.FNext := nil; // Letztes Segment entfernen
+      
+    if Current.FNext <> nil and not AGrow then // wenn nächstes nicht nil und kein neues segment
+      Current.FNext := nil; // Letztes Segment entfernen, bei grow behalten
+    
 
-    WallCollision; 
-    SelfCollision;
+    Result := not WallCollision and not SelfCollision;
   end;
-end.hu=
+
+end;
+end.
