@@ -39,3 +39,13 @@
 
 # debug information files
 *.dwo
+
+# Compiler-Ausgaben
+*.ppu
+*.pps
+*.pbu
+
+# Temporäre Dateien & Backup
+backup/
+ppas.bat
+link.res

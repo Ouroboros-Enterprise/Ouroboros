@@ -1,0 +1,26 @@
+{
+    "files.associations": {
+        "*.pas": "pascal",
+        "*.pp": "pascal",
+        "*.inc": "pascal",
+        "*.lpr": "pascal"
+    },
+    "editor.formatOnSave": true,
+    "[pascal]": {
+        // Hier ist die ID für den Formatter von Alessandro Fragnani:
+        "editor.defaultFormatter": "alefragnani.pascal",
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.suggest.snippetsPreventQuickSuggestions": false
+    },
+    // Einstellungen spezifisch für dieses Plugin
+    "pascal.format.indent": 2,
+    "pascal.format.wrapLineLength": 0, // 0 deaktiviert den automatischen Zeilenumbruch
+    "pascal.compiler.path": "fpc",
+    "files.exclude": {
+        "**/*.o": true,
+        "**/*.ppu": true,
+        "**/*.compiled": true,
+        "**/*.or": true
+    }
+}
