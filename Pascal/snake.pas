@@ -18,15 +18,12 @@ type
   private
     function SelfCollision: Boolean;
     function WallCollision: Boolean;
-  end;
-
-
+  end; ///
 
 implementation
   constructor TSnake.Create(AX, AY: Integer; ANext: TNode);
   begin
     inherited Create(AX, AY, ANext);
-    FNext := TNode.Create(AX + 1, AY, nil); // eins rechts vom Kopf der Schlange
   end;
 
   function TSnake.WallCollision: Boolean;
@@ -38,7 +35,7 @@ implementation
   var
     Current: TNode;
   begin
-    Result := False;  
+    Result := False;
     Current := FNext;   
 
     while Current <> nil do
@@ -75,6 +72,4 @@ implementation
 
     Result := not WallCollision and not SelfCollision;
   end;
-
-end;
 end.
