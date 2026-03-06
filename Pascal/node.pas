@@ -4,7 +4,7 @@ interface
 
 type
   TNode = class
-    private
+    protected
       FX: integer;  // von 0 bis 19, <0 und >=20 sind Rand (schlange verreckt)
       FY: integer;
       FNext: TNode;

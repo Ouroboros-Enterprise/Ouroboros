@@ -1,9 +1,10 @@
 unit snake;
 
+interface
+
 uses
   node;
 
-interface
 type
   TSnake = class(TNode)
 
@@ -25,7 +26,7 @@ implementation
   constructor TSnake.Create(AX, AY: Integer; ANext: TNode);
   begin
     inherited Create(AX, AY, ANext);
-    FNext := new TNode(AX + 1, AY, nil); // eins rechts vom Kopf der Schlange
+    FNext := TNode.Create(AX + 1, AY, nil); // eins rechts vom Kopf der Schlange
   end;
 
   function TSnake.WallCollision: Boolean;
@@ -60,7 +61,7 @@ implementation
     NewHead: TNode;
     Current: TNode;
   begin
-    NewHead := new TNode(AX, AY, FNext); 
+    NewHead := TNode.Create(AX, AY, FNext);
     FNext := NewHead; 
 
 
