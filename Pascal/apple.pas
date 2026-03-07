@@ -4,7 +4,7 @@ unit apple;
 interface
 
 uses
-  snake;
+  snake, node;
 
 type
   TApple = class
@@ -12,8 +12,8 @@ type
     FX: Integer;
     FY: Integer;
   public
-    constructor Create(ASnake: FSnake);
-    procedure Eat(ASnake: FSnake); // randomized coords
+    constructor Create(ASnake: TSnake);
+    procedure Eat(ASnake: TSnake); // randomized coords
 
     property X: Integer read FX write FX;
     property Y: Integer read FY write FY;
@@ -29,7 +29,7 @@ implementation
 
   procedure TApple.Eat(ASnake: TSnake);
     var
-      currentNode: FSnake;  
+      currentNode: TNode;  
       blockiert: Boolean;
       RX, RY: Integer;
     begin
@@ -40,7 +40,7 @@ implementation
           RX := Random(20); // 0 bis 19
           RY := Random(20); // 0 bis 19
 
-          currentNode := ASnake.Head; // Startpunkt der Snake
+          currentNode := ASnake; // Startpunkt der Snake
           while currentNode <> nil do
             begin
               if (currentNode.X = RX) and (currentNode.Y = RY) then

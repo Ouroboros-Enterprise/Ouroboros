@@ -1,11 +1,12 @@
 program Ouroboros;
 
 uses
-  snake;
+  crt,
+  snake,
   game;
 
 var
-  game: TGame;
+  MyGame: TGame;
   Ch: Char;
   started: Boolean = False;
   AX, AY: Integer;
@@ -14,7 +15,8 @@ begin
   Randomize;
   AX := Random(20);
   AY := Random(20);
-  game := TGame.Create(AX, AY);
+  
+  MyGame := TGame.Create(AX, AY);
 
   while not started do
   begin
@@ -22,7 +24,7 @@ begin
       begin
         Ch := ReadKey;
         case Ch of
-          ' ', #13: begin game.Start(); started := True end;
+          ' ', #13: begin MyGame.Start(); started := True end;
       end;
     end; 
   end;

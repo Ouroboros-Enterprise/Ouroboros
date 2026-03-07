@@ -4,9 +4,10 @@ unit game;
 interface
 
 uses
-  snake;
-  node;
-  apple;
+  crt,
+  snake,
+  node,
+  apple,
   gui;
 
 type
@@ -17,20 +18,21 @@ type
     FAppleCount: Integer;
     FGUI: TGUI;
   public
-    constructor Create;
+    constructor Create(AStartX, AStartY: Integer);
     destructor Destroy; override;
     procedure Update;
     procedure Start;
   end;
 
 implementation
-constructor TGame.Create(AStartX, AStartY: Integer)
+constructor TGame.Create(AStartX, AStartY: Integer);
   var
     ANext: TNode;
   begin
     ANext := TNode.Create(1, 2, nil);
     FSnake := TSnake.Create(AStartX, AStartY, ANext);
     FApple := TApple.Create(FSnake); // darf nicht mit snake kollidieren
+    FGUI := TGUI.Create;
     FAppleCount := 0;
   end;
 
@@ -41,7 +43,9 @@ procedure TGame.Start;
     AX, AY: Integer;
     AGrow: Boolean;
   begin
+    DX := 1; DY := 0;
     while true do // game loop
+    begin
       if KeyPressed then
       begin
         Input := ReadKey;
@@ -50,6 +54,7 @@ procedure TGame.Start;
           's', 'S', #80: begin DX := 0; DY := 1; end;
           'a', 'A', #75: begin DX := -1; DY := 0; end;
           'd', 'D', #77: begin DX := 1; DY := 0; end;
+        end;
       end;
       AX := FSnake.X + DX;
       AY := FSnake.Y + DY; // Kann ich kurz mal alles pushen? Kann ich aufs Terminal?
@@ -64,11 +69,12 @@ procedure TGame.Start;
 
       // Führt move logik aus und detected Kollision
       // Kollision -> break aus der loop -> game over screen
-      if FSnake.Move(AX, AY, AGrow) then
+      if not FSnake.Move(AX, AY, AGrow) then
         Break;
 
       // Zeigt jetzt den Frame an
       FGUI.GenGUI(FSnake, FApple);
+      Delay(100);
     end;
     FGUI.GameOver();
   end;
@@ -82,6 +88,7 @@ destructor TGame.Destroy;
   begin
     FSnake.Free;
     FApple.Free;
+    FGUI.Free;
     inherited Destroy;
   end;
 end.

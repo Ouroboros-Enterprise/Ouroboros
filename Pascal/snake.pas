@@ -61,11 +61,11 @@ implementation
 
 
     Current := FNext;
-    while (Current.FNext <> nil) and (Current.FNext.FNext <> nil) do
-      Current := Current.FNext;
+    while (Current.Next <> nil) and (Current.Next.Next <> nil) do
+      Current := Current.Next;
       
-    if Current.FNext <> nil and not AGrow then // wenn nächstes nicht nil und kein neues segment
-      Current.FNext := nil; // Letztes Segment entfernen, bei grow behalten
+    if (Current.Next <> nil) and not AGrow then // wenn nächstes nicht nil und kein neues segment
+      Current.Next := nil; // Letztes Segment entfernen, bei grow behalten
     
 
     Result := not WallCollision and not SelfCollision;
