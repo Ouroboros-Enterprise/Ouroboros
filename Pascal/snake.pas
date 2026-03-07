@@ -11,7 +11,7 @@ type
 
   public
     constructor Create(AX, AY: Integer; ANext: TNode);
-    function Move(AX, AY, ASegs: Integer): Boolean;
+    function Move(AX, AY: Integer; AGrow: Boolean): Boolean;
 
   private
     function SelfCollision: Boolean;
