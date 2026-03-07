@@ -15,7 +15,7 @@ type
     procedure PlaceApple(AApple: TApple);
   public
     constructor Create;
-    procedure GenGUI(ASnake: TSnake; AApple: TApple);
+    procedure GenGUI(ASnake: TSnake; AApple: TApple; AScore: Integer);
     procedure GameOver();
   end;
 
@@ -57,12 +57,12 @@ implementation
       Spielfeld[AApple.X, AApple.Y] := '@';
     end;
 
-  procedure TGUI.GenGUI(ASnake: TSnake; AApple: TApple); 
+  procedure TGUI.GenGUI(ASnake: TSnake; AApple: TApple; AScore: Integer); 
     var
       i, j: Integer;
       feld: char;
     begin
-      clrscr;
+      GotoXY(1, 1);
       for i := -1 to 20 do
         for j := -1 to 20 do
           Spielfeld[i, j] := ' ';
@@ -83,6 +83,9 @@ implementation
           else
             write(feld, ' '); // Für den Rest ein Leerzeichen als Padding
         end;
+
+        if j = -1 then
+          write('  Punkte: ', AScore);
 
         writeln;
       end;

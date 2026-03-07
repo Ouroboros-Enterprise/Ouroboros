@@ -44,6 +44,8 @@ procedure TGame.Start;
     AGrow: Boolean;
   begin
     DX := 1; DY := 0;
+    clrscr;
+    CursorOff;
     while true do // game loop
     begin
       if KeyPressed then
@@ -74,10 +76,11 @@ procedure TGame.Start;
         Break;
 
       // Zeigt jetzt den Frame an
-      FGUI.GenGUI(FSnake, FApple);
+      FGUI.GenGUI(FSnake, FApple, FAppleCount);
       Delay(300);
     end;
     FGUI.GameOver();
+    ReadKey;
   end;
 
 
