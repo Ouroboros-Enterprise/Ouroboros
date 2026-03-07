@@ -1,3 +1,4 @@
+{$mode objfpc}
 unit snake;
 
 interface
@@ -9,10 +10,7 @@ type
   TSnake = class(TNode)
 
   public
-    constructor Create(AX, AY: Integer; ANext: TNode)
-    begin
-      inherited Create(AX, AY, ANext);
-    end;
+    constructor Create(AX, AY: Integer; ANext: TNode);
     function Move(AX, AY, ASegs: Integer): Boolean;
 
   private
