@@ -76,7 +76,12 @@ implementation
         for i := -1 to 20 do
         begin
           feld := Spielfeld[i, j];
-          write(feld);
+          // Terminal-Schriften sind normalerweise doppelt so hoch wie breit.
+          // Wir ergänzen ein Leerzeichen, damit "Pixel" quadratisch wirken:
+          if feld = '#' then
+            write(feld, feld) // Für den Rand zwei Raute-Zeichen (damit er dicker aussieht)
+          else
+            write(feld, ' '); // Für den Rest ein Leerzeichen als Padding
         end;
 
         writeln;

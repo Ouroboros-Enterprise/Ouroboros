@@ -75,7 +75,7 @@ procedure TGame.Start;
 
       // Zeigt jetzt den Frame an
       FGUI.GenGUI(FSnake, FApple);
-      Delay(100);
+      Delay(300);
     end;
     FGUI.GameOver();
   end;
