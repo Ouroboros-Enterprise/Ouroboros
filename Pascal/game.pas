@@ -44,8 +44,6 @@ procedure TGame.Start;
     AGrow: Boolean;
   begin
     DX := 1; DY := 0;
-    clrscr;
-    CursorOff;
     while true do // game loop
     begin
       if KeyPressed then
@@ -76,17 +74,16 @@ procedure TGame.Start;
         Break;
 
       // Zeigt jetzt den Frame an
-      FGUI.GenGUI(FSnake, FApple, FAppleCount);
-      Delay(300);
+      FGUI.GenGUI(FSnake, FApple);
+      Delay(100);
     end;
     FGUI.GameOver();
-    ReadKey;
-  end;
-
+    ReadKey; // erst, wenn key gedrückt beenden
+  end; // Ich hab noch das Spielfeld optimiert. Kannst pullen (aber nicht pullern haha)
 
 procedure TGame.Update;
   begin
-  end;
+  end;// Bist du grad im chat?
 
 destructor TGame.Destroy;
   begin
