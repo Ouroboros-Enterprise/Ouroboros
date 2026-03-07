@@ -21,7 +21,7 @@ begin
   while not started do
   begin
     if KeyPressed then
-      begin // Kansnt wieder was pullen. Hab noch gerade eben was geändert. Jetzt ist au
+      begin
         Ch := ReadKey;
         case Ch of
           ' ', #13: begin MyGame.Start(); started := True end;
