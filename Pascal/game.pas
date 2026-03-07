@@ -54,6 +54,7 @@ procedure TGame.Start;
           's', 'S', #80: begin DX := 0; DY := 1; end;
           'a', 'A', #75: begin DX := -1; DY := 0; end;
           'd', 'D', #77: begin DX := 1; DY := 0; end;
+          'q', 'Q', #27: Break; // ESC or Q to quit explicitly
         end;
       end;
       AX := FSnake.X + DX;

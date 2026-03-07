@@ -53,12 +53,13 @@ implementation
   function TSnake.Move(AX, AY: Integer; AGrow: Boolean): Boolean;
   { Erstellt einen neuen Kopf der Schlange und entfernt das letzte Segment, um die Bewegung zu simulieren. }
   var
-    NewHead: TNode;
+    OldHeadNode: TNode;
     Current: TNode;
   begin
-    NewHead := TNode.Create(AX, AY, FNext);
-    FNext := NewHead; 
-
+    OldHeadNode := TNode.Create(Self.X, Self.Y, FNext);
+    FNext := OldHeadNode; 
+    Self.X := AX;
+    Self.Y := AY;
 
     Current := FNext;
     while (Current.Next <> nil) and (Current.Next.Next <> nil) do

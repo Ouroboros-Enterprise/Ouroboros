@@ -4,7 +4,7 @@ unit gui;
 interface
 
 uses
-  snake, node, apple;
+  crt, snake, node, apple;
 
 type
   TGUI = class
@@ -62,6 +62,7 @@ implementation
       i, j: Integer;
       feld: char;
     begin
+      clrscr;
       for i := -1 to 20 do
         for j := -1 to 20 do
           Spielfeld[i, j] := ' ';
