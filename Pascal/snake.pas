@@ -50,7 +50,7 @@ implementation
 
 
   // AX und AY sind die neuen Koordinaten vom neuen Head, AGrow ist wahr, wenn Apfel gefressen
-  function TSnake.Move(AX, AY, AGrow: Boolean): Boolean;
+  function TSnake.Move(AX, AY: Integer; AGrow: Boolean): Boolean;
   { Erstellt einen neuen Kopf der Schlange und entfernt das letzte Segment, um die Bewegung zu simulieren. }
   var
     NewHead: TNode;
