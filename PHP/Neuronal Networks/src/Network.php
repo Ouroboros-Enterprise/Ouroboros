@@ -10,11 +10,20 @@ class Network
 {
     /** @var LayerInterface[] */
     protected array $layers = [];
-    protected ?LossInterface $lossFunction = null;
+    protected ?\NeuralNet\Losses\LossInterface $lossFunction = null;
+    protected ?\NeuralNet\Optimizers\OptimizerInterface $optimizer = null;
 
-    public function addLayer(LayerInterface $layer): void
+    public function addLayer(\NeuralNet\Layers\LayerInterface $layer): void
     {
         $this->layers[] = $layer;
+    }
+
+    public function setOptimizer(\NeuralNet\Optimizers\OptimizerInterface $optimizer): void
+    {
+        $this->optimizer = $optimizer;
+        foreach ($this->layers as $i => $layer) {
+            $layer->setOptimizer("layer_" . $i, $this->optimizer);
+        }
     }
 
     public function setLossFunction(LossInterface $loss): void
@@ -22,19 +31,28 @@ class Network
         $this->lossFunction = $loss;
     }
 
-    public function forward(Matrix $input): Matrix
+    public function forward($input): Matrix
     {
-        $output = $input;
+        $output = is_array($input) ? $input : $input; // Allow passing array of vectors for RNN
+        
         foreach ($this->layers as $layer) {
-            $output = $layer->forward($output);
+            // Ensure $output is wrapped correctly for the layer if it's not a Matrix
+            if (!($output instanceof Matrix) && !is_array($output)) {
+                 $output = Matrix::fromArray($output);
+            }
+            $output = $layer->forward($output instanceof Matrix ? $output : Matrix::fromArray($output));
         }
         return $output;
     }
 
     public function backward(Matrix $outputGradient, float $learningRate): void
     {
+        if ($this->optimizer instanceof \NeuralNet\Optimizers\Adam) {
+            $this->optimizer->incrementStep();
+        }
+
         $gradient = $outputGradient;
-        // Backprop: iterate backwards through layers
+        // Iterate backwards from the last layer to the first
         for ($i = count($this->layers) - 1; $i >= 0; $i--) {
             $gradient = $this->layers[$i]->backward($gradient, $learningRate);
         }

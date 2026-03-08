@@ -34,19 +34,24 @@ class OnTheFlyDataset implements Iterator, Countable {
     public function current(): array {
         $sample = $this->dataset[$this->position];
         
-        $inputVector = array_fill(0, $this->N * $this->vocabSize, 0.0);
-        foreach ($sample['input_ids'] as $pos => $id) {
-            $inputVector[($pos * $this->vocabSize) + $id] = 1.0;
+        // For RNN, input is a sequence of one-hot vectors.
+        // Each element in the sequence is a one-hot vector of vocabSize.
+        // The SimpleRNN layer expects an array of these vectors.
+        $inputSequence = [];
+        foreach ($sample['input_ids'] as $id) {
+            $oneHot = array_fill(0, $this->vocabSize, 0.0);
+            $oneHot[$id] = 1.0;
+            $inputSequence[] = $oneHot;
         }
 
         $targetVector = array_fill(0, $this->vocabSize, 0.0);
         $targetVector[$sample['target_id']] = 1.0;
 
-        return ['input' => $inputVector, 'target' => $targetVector];
+        return ['input' => $inputSequence, 'target' => $targetVector];
     }
 }
 
-echo "--- Chat LLM Trainer (Memory Optimized) ---\n";
+echo "--- Chat SLM Trainer (RNN + Adam) ---\n";
 
 $dataFile = __DIR__ . '/llm_data.json';
 if (!file_exists($dataFile)) {
@@ -56,35 +61,34 @@ if (!file_exists($dataFile)) {
 $data = json_decode(file_get_contents($dataFile), true);
 $vocabSize = $data['vocabSize'];
 $N = $data['contextWindow'];
-// Subset the dataset for faster demo training in PHP
-$datasetIds = array_slice($data['dataset'], 0, 100); 
+$datasetIds = $data['dataset']; // Use full dataset for RNN training
 
 
-// Neural Network Architecture
-// Scaled for performance with large vocabulary
-$inputSize = $N * $vocabSize;
+// Neural Network Architecture: RNN for context, Dense for prediction
 $hiddenSize = 64; 
 
 $nn = new Network();
-$nn->addLayer(new Dense($inputSize, $hiddenSize, new ReLU()));
-$nn->addLayer(new Dense($hiddenSize, $vocabSize, new Softmax()));
-$nn->setLossFunction(new MSE());
+$nn->addLayer(new \NeuralNet\Layers\SimpleRNN($vocabSize, $hiddenSize, new \NeuralNet\Activations\Tanh()));
+$nn->addLayer(new \NeuralNet\Layers\Dense($hiddenSize, $vocabSize, new \NeuralNet\Activations\Softmax()));
 
-$epochs = 500; 
-$learningRate = 0.5;
-$lrDecay = 3.0;
+// Use Adam Optimizer for significantly faster/stable convergence
+$nn->setOptimizer(new \NeuralNet\Optimizers\Adam(0.9, 0.999, 1e-8));
+$nn->setLossFunction(new \NeuralNet\Losses\CategoricalCrossEntropy());
+
+$epochs = 100; // Adam converges MUCH faster
+$learningRate = 0.001; // Adam usually works better with smaller base LR
 
 $trainingData = new OnTheFlyDataset($datasetIds, $N, $vocabSize);
 
-echo "Network built:\n";
+echo "Network built (RNN Upgrade):\n";
 echo "  Vocabulary Size: $vocabSize\n";
 echo "  Context Window: $N\n";
-echo "  Input Layer: $inputSize\n";
-echo "  Hidden Layer: $hiddenSize\n";
+echo "  Hidden State Size: $hiddenSize\n";
+echo "  Optimizer: Adam\n";
 echo "  Training Samples: " . count($trainingData) . "\n";
-echo "  Epochs: $epochs  LR: $learningRate  Decay: $lrDecay\n\n";
+echo "  Epochs: $epochs  Base LR: $learningRate\n\n";
 
-$nn->train($trainingData, $epochs, $learningRate, $lrDecay);
+$nn->train($trainingData, $epochs, $learningRate);
 
 $modelPath = __DIR__ . '/llm_model.dat';
 $nn->save($modelPath);

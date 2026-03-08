@@ -9,7 +9,9 @@ class Dense implements LayerInterface
 {
     public Matrix $weights;
     public Matrix $biases;
-    public ?ActivationInterface $activation;
+    public ?\NeuralNet\Activations\ActivationInterface $activation = null;
+    public ?\NeuralNet\Optimizers\OptimizerInterface $optimizer = null;
+    public string $layerId = '';
 
     // Cache for backpropagation
     protected Matrix $inputCache;
@@ -26,6 +28,12 @@ class Dense implements LayerInterface
         $this->biases->randomize(-1.0, 1.0);
 
         $this->activation = $activation;
+    }
+
+    public function setOptimizer(string $id, \NeuralNet\Optimizers\OptimizerInterface $optimizer): void
+    {
+        $this->layerId = $id;
+        $this->optimizer = $optimizer;
     }
 
     public function forward(Matrix $input): Matrix
@@ -63,13 +71,18 @@ class Dense implements LayerInterface
         $inputGradient = $weightsTranspose->multiply($outputGradient);
 
         // 4. Update the layer parameters (weights and biases)
-        // W = W - learningRate * dW
-        // B = B - learningRate * dB (dB is just outputGradient)
-        $learningRateMatrix = $weightGradients->multiplyScalar($learningRate);
-        $this->weights = $this->weights->subtract($learningRateMatrix);
+        if ($this->optimizer) {
+            $this->optimizer->update($this->layerId, $this->weights, $weightGradients, $this->biases, $outputGradient, $learningRate);
+        } else {
+            // Fallback to SGD
+            // W = W - learningRate * dW
+            // B = B - learningRate * dB (dB is just outputGradient)
+            $learningRateMatrix = $weightGradients->multiplyScalar($learningRate);
+            $this->weights = $this->weights->subtract($learningRateMatrix);
 
-        $learningRateBiasMatrix = $outputGradient->multiplyScalar($learningRate);
-        $this->biases = $this->biases->subtract($learningRateBiasMatrix);
+            $learningRateBiasMatrix = $outputGradient->multiplyScalar($learningRate);
+            $this->biases = $this->biases->subtract($learningRateBiasMatrix);
+        }
 
         return $inputGradient;
     }

@@ -53,16 +53,16 @@ while (true) {
         $paddedContext = array_fill(0, $N, $padId);
         array_splice($paddedContext, $N - count($contextTokens), count($contextTokens), $contextTokens);
 
-        // One-hot encode
-        $inputVector = [];
-        foreach ($paddedContext as $token) {
+        // One-hot encode as a sequence of vectors for RNN
+        $inputSequence = [];
+        foreach ($paddedContext as $tokenId) {
             $oneHot = array_fill(0, $vocabSize, 0.0);
-            $oneHot[$token] = 1.0;
-            $inputVector = array_merge($inputVector, $oneHot);
+            $oneHot[$tokenId] = 1.0;
+            $inputSequence[] = $oneHot;
         }
 
-        // Predict
-        $prediction = $nn->predict($inputVector);
+        // Predict using the RNN-compatible sequence
+        $prediction = $nn->predict($inputSequence);
 
         // Convert column vector to flat array
         $probs = [];

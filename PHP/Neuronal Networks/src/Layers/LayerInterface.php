@@ -20,4 +20,8 @@ interface LayerInterface
      * @return Matrix Gradient of the loss with respect to the input of this layer
      */
     public function backward(Matrix $outputGradient, float $learningRate): Matrix;
+    /**
+     * Set an optimizer for this layer
+     */
+    public function setOptimizer(string $id, \NeuralNet\Optimizers\OptimizerInterface $optimizer): void;
 }
