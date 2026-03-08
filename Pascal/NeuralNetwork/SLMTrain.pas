@@ -20,14 +20,14 @@ var
   TotalLoss: Double;
 
 begin
-  if not FileExists('../../PHP/Neuronal Networks/examples/LLM/llm_data.json') then
+  if not FileExists('../../PHP/NeuronalNetworks/examples/LLM/llm_data.json') then
   begin
     WriteLn('Error: llm_data.json not found.');
     Halt(1);
   end;
 
   WriteLn('Loading dataset into memory...');
-  JSONStream := TFileStream.Create('../../PHP/Neuronal Networks/examples/LLM/llm_data.json', fmOpenRead);
+  JSONStream := TFileStream.Create('../../PHP/NeuronalNetworks/examples/LLM/llm_data.json', fmOpenRead);
   Parser := TJSONParser.Create(JSONStream);
   Data := Parser.Parse as TJSONObject;
   VocabSize := Data.Integers['vocabSize'];

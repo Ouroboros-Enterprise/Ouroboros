@@ -33,11 +33,11 @@ begin
   // In a real scenario, we'd load the vocab. 
   // For this demo/benchmark, we'll re-fit on the corpus to get the same mapping.
   Corpus := TStringList.Create;
-  if FileExists('../../PHP/Neuronal Networks/examples/LLM/corpus.json') then
+  if FileExists('../../PHP/NeuronalNetworks/examples/LLM/corpus.json') then
   begin
     // Simple way to get words for the demo: loading raw JSON as text and fitting
     // (Better would be a proper JSON vocab load, but let's keep it simple for now)
-    Corpus.LoadFromFile('../../PHP/Neuronal Networks/examples/LLM/corpus.json');
+    Corpus.LoadFromFile('../../PHP/NeuronalNetworks/examples/LLM/corpus.json');
     Tokenizer.Fit(Corpus);
   end;
 
