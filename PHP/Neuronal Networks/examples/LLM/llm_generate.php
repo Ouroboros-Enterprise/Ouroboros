@@ -18,7 +18,7 @@ if (!file_exists($modelPath) || !file_exists($tokenizerPath)) {
 $nn = Network::load($modelPath);
 $tokenizer = unserialize(file_get_contents($tokenizerPath));
 $vocabSize = $tokenizer->getVocabSize();
-$N = 2; // Fixed window size matching training
+$N = 5; // Fixed window size matching training
 
 // Ask user for a seed sentence (simulated here for demonstration)
 $seedSentence = "das wetter"; // Can be modified or passed as arg
@@ -30,23 +30,27 @@ echo "Seed: \"$seedSentence\"\n";
 
 // Encode
 $tokens = $tokenizer->encode($seedSentence);
-if (count($tokens) < $N) {
-    die("Error: Seed sentence must have at least $N words to start the window.\n");
-}
 
 // Generate X words
-$wordsToGenerate = 8;
+$wordsToGenerate = 15;
 $generatedContext = $tokens;
 
 echo "Generating $wordsToGenerate words...\n\n";
 
 for ($step = 0; $step < $wordsToGenerate; $step++) {
-    // Take the last N words from our context
-    $window = array_slice($generatedContext, -$N);
+    // We need exactly N words of context
+    $startIdx = max(0, count($generatedContext) - $N);
+    $length = min(count($generatedContext), $N);
+    $contextTokens = array_slice($generatedContext, $startIdx, $length);
+    
+    // Pad from left if too short
+    $padId = $tokenizer->getPadId();
+    $paddedContext = array_fill(0, $N, $padId);
+    array_splice($paddedContext, $N - count($contextTokens), count($contextTokens), $contextTokens);
     
     // Convert to one-hot concatenation
     $inputVector = [];
-    foreach ($window as $token) {
+    foreach ($paddedContext as $token) {
         $oneHot = array_fill(0, $vocabSize, 0.0);
         $oneHot[$token] = 1.0;
         $inputVector = array_merge($inputVector, $oneHot);

@@ -47,18 +47,25 @@ class Network
         return $output->toArray();
     }
 
-    public function train(array $trainingData, int $epochs, float $learningRate): void
+    public function train(array $trainingData, int $epochs, float $learningRate, float $lrDecay = 0.0): void
     {
         if (!$this->lossFunction) {
             throw new \Exception("Loss function not set.");
         }
 
+        $startTime = microtime(true);
+
         for ($epoch = 0; $epoch < $epochs; $epoch++) {
             $totalLoss = 0;
+            $correct = 0;
+
+            // Exponential learning rate decay: lr = lr0 * e^(-lrDecay * epoch/epochs)
+            $currentLr = $lrDecay > 0
+                ? $learningRate * exp(-$lrDecay * ($epoch / $epochs))
+                : $learningRate;
 
             // Simple SGD (iterating through each example)
             foreach ($trainingData as $data) {
-                // Determine structure (e.g., associative array with 'input' and 'target')
                 $input = Matrix::fromArray($data['input']);
                 $target = Matrix::fromArray($data['target']);
 
@@ -68,16 +75,53 @@ class Network
                 // Calculate Loss
                 $totalLoss += $this->lossFunction->calculate($output, $target);
 
+                // Check accuracy: does argmax(output) == argmax(target)?
+                $predMax = 0; $trueMax = 0;
+                $predProb = PHP_FLOAT_MIN; $trueProb = PHP_FLOAT_MIN;
+                foreach ($output->data as $i => $row) {
+                    if ($row[0] > $predProb) { $predProb = $row[0]; $predMax = $i; }
+                }
+                foreach ($target->data as $i => $row) {
+                    if ($row[0] > $trueProb) { $trueProb = $row[0]; $trueMax = $i; }
+                }
+                if ($predMax === $trueMax) $correct++;
+
                 // Backward pass
                 $errorGradient = $this->lossFunction->derivative($output, $target);
-                $this->backward($errorGradient, $learningRate);
+                $this->backward($errorGradient, $currentLr);
             }
 
-            // Print progress
-            if (($epoch + 1) % 1000 === 0) {
-                echo "Epoch " . ($epoch + 1) . " / $epochs - Loss: " . ($totalLoss / count($trainingData)) . "\n";
+            // Print progress every 100 epochs
+            if (($epoch + 1) % 100 === 0 || $epoch === 0) {
+                $avgLoss = $totalLoss / count($trainingData);
+                $accuracy = round(($correct / count($trainingData)) * 100, 1);
+                $elapsed = microtime(true) - $startTime;
+                $pct = (int)(($epoch + 1) / $epochs * 30);
+                $bar = str_repeat('█', $pct) . str_repeat('░', 30 - $pct);
+
+                // Safe time formatting: cap floats to avoid int overflow warning
+                $toTime = static function (float $secs): string {
+                    $s = min($secs, 86399.0); // cap at 24h
+                    return sprintf('%dm %02ds', (int)($s / 60), (int)fmod($s, 60.0));
+                };
+
+                $elapsedStr = $toTime($elapsed);
+                if ($elapsed > 0 && $epoch > 0) {
+                    $remaining = ($epochs - ($epoch + 1)) * ($elapsed / ($epoch + 1));
+                    $etaStr = $remaining > 0 ? $toTime($remaining) : 'done';
+                } else {
+                    $etaStr = '?';
+                }
+
+                echo "\r[{$bar}] Epoch " . ($epoch + 1) . "/{$epochs}"
+                    . "  Loss: " . number_format($avgLoss, 6)
+                    . "  Acc: {$accuracy}%"
+                    . "  LR: " . number_format($currentLr, 5)
+                    . "  Elapsed: {$elapsedStr}  ETA: {$etaStr}  ";
+                flush();
             }
         }
+        echo "\n";
     }
 
     public function save(string $filepath): void

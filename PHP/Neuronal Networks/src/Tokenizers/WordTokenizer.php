@@ -7,6 +7,15 @@ class WordTokenizer implements TokenizerInterface
     private array $wordToId = [];
     private array $idToWord = [];
     private int $nextId = 0;
+    
+    public const PAD_TOKEN = '<PAD>';
+
+    public function __construct() {
+        // Reserve ID 0 for Padding
+        $this->wordToId[self::PAD_TOKEN] = 0;
+        $this->idToWord[0] = self::PAD_TOKEN;
+        $this->nextId = 1;
+    }
 
     /**
      * Train the tokenizer on a corpus (an array of texts) to build the vocabulary.
@@ -30,8 +39,18 @@ class WordTokenizer implements TokenizerInterface
         return $this->nextId;
     }
 
+    public function getPadId(): int
+    {
+        return $this->wordToId[self::PAD_TOKEN];
+    }
+
     public function encode(string $text): array
     {
+        // Check if the text is a special token (like <PAD>) - handle directly
+        if (isset($this->wordToId[$text])) {
+            return [$this->wordToId[$text]];
+        }
+        
         $words = $this->tokenizeText($text);
         $encoded = [];
         foreach ($words as $word) {
@@ -56,12 +75,34 @@ class WordTokenizer implements TokenizerInterface
         return implode(' ', $words);
     }
 
+    public const REQUEST_START = '[REQUEST]';
+    public const REQUEST_END = '[/REQUEST]';
+    public const RESPONSE_START = '[RESPONSE]';
+    public const RESPONSE_END = '[/RESPONSE]';
+
     private function tokenizeText(string $text): array
     {
-        // Simple regex to split by whitespace and punctuation, keeping words lowercase
-        $text = strtolower(trim($text));
-        $text = preg_replace('/[^\w\s]/u', '', $text); // Remove punctuation
-        $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
-        return $words ?: [];
+        $text = trim($text);
+        $tokens = [];
+
+        // Extract special bracket tokens [TOKEN] and regular words in order
+        // Pattern: match [ANYTHING] or sequences of non-whitespace non-bracket chars
+        preg_match_all('/\[[^\]]+\]|[^\s\[\]]+/u', $text, $matches);
+
+        foreach ($matches[0] as $part) {
+            // If it's a special token in brackets, keep it as-is
+            if (preg_match('/^\[.+\]$/', $part)) {
+                $tokens[] = $part;
+            } else {
+                // Normal word: lowercase, strip punctuation
+                $word = strtolower($part);
+                $word = preg_replace('/[^\w]/u', '', $word);
+                if ($word !== '') {
+                    $tokens[] = $word;
+                }
+            }
+        }
+
+        return $tokens;
     }
 }
