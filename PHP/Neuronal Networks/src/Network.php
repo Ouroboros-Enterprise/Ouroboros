@@ -47,10 +47,15 @@ class Network
         return $output->toArray();
     }
 
-    public function train(array $trainingData, int $epochs, float $learningRate, float $lrDecay = 0.0): void
+    public function train(iterable $trainingData, int $epochs, float $learningRate, float $lrDecay = 0.0, ?int $sampleCount = null): void
     {
         if (!$this->lossFunction) {
             throw new \Exception("Loss function not set.");
+        }
+
+        $effectiveSampleCount = $sampleCount;
+        if ($effectiveSampleCount === null && is_countable($trainingData)) {
+            $effectiveSampleCount = count($trainingData);
         }
 
         $startTime = microtime(true);
@@ -58,6 +63,7 @@ class Network
         for ($epoch = 0; $epoch < $epochs; $epoch++) {
             $totalLoss = 0;
             $correct = 0;
+            $actualProcessed = 0;
 
             // Exponential learning rate decay: lr = lr0 * e^(-lrDecay * epoch/epochs)
             $currentLr = $lrDecay > 0
@@ -66,6 +72,7 @@ class Network
 
             // Simple SGD (iterating through each example)
             foreach ($trainingData as $data) {
+                $actualProcessed++;
                 $input = Matrix::fromArray($data['input']);
                 $target = Matrix::fromArray($data['target']);
 
@@ -91,10 +98,14 @@ class Network
                 $this->backward($errorGradient, $currentLr);
             }
 
+            if ($effectiveSampleCount === null) {
+                $effectiveSampleCount = $actualProcessed;
+            }
+
             // Print progress every 100 epochs
-            if (($epoch + 1) % 100 === 0 || $epoch === 0) {
-                $avgLoss = $totalLoss / count($trainingData);
-                $accuracy = round(($correct / count($trainingData)) * 100, 1);
+            if (($epoch + 1) % 10 === 0 || $epoch === 0) { // More frequent updates for large corpus
+                $avgLoss = $totalLoss / $effectiveSampleCount;
+                $accuracy = round(($correct / $effectiveSampleCount) * 100, 1);
                 $elapsed = microtime(true) - $startTime;
                 $pct = (int)(($epoch + 1) / $epochs * 30);
                 $bar = str_repeat('█', $pct) . str_repeat('░', 30 - $pct);
@@ -117,7 +128,7 @@ class Network
                     . "  Loss: " . number_format($avgLoss, 6)
                     . "  Acc: {$accuracy}%"
                     . "  LR: " . number_format($currentLr, 5)
-                    . "  Elapsed: {$elapsedStr}  ETA: {$etaStr}  ";
+                    . "  Elapsed: {$elapsedStr}  ETA: {$etaStr}   ";
                 flush();
             }
         }

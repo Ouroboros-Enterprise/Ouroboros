@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../../autoload.php';
+ini_set('memory_limit', '512M'); // 512MB is plenty for IDs
 
 use NeuralNet\Tokenizers\WordTokenizer;
 
@@ -21,21 +22,19 @@ $tokenizer->fit($corpus);
 $vocabSize = $tokenizer->getVocabSize();
 echo "Vocabulary Size: $vocabSize\n\n";
 
-// Context Window: how many previous tokens the model sees
-$N = 8;
+// Context Window: reduced for performance with large vocabulary
+$N = 4;
 $dataset = [];
 $padId = $tokenizer->getPadId();
 
-echo "2. Generating Sequence Data (Sliding Window N=$N with Padding)...\n";
+echo "2. Generating Token ID Sequences (Sliding Window N=$N)...\n";
 foreach ($corpus as $entry) {
-    // Tokenize the full entry (including [REQUEST], [/REQUEST], [RESPONSE], [/RESPONSE])
     $tokens = $tokenizer->encode($entry);
 
     if (count($tokens) < 2) {
-        continue; // skip entries too short
+        continue;
     }
 
-    // Generate sliding windows across the full sequence
     for ($i = 0; $i < count($tokens) - 1; $i++) {
         $targetToken = $tokens[$i + 1];
 
@@ -45,43 +44,24 @@ foreach ($corpus as $entry) {
         $contextTokens = array_slice($tokens, $startIdx, $length);
 
         // Left-pad if shorter than N
-        $paddedContext = array_fill(0, $N, $padId);
-        array_splice($paddedContext, $N - count($contextTokens), count($contextTokens), $contextTokens);
+        $paddedContextIds = array_fill(0, $N, $padId);
+        array_splice($paddedContextIds, $N - count($contextTokens), count($contextTokens), $contextTokens);
 
-        // One-hot encode input (concat N one-hot vectors)
-        $inputVector = [];
-        foreach ($paddedContext as $token) {
-            $oneHot = array_fill(0, $vocabSize, 0.0);
-            $oneHot[$token] = 1.0;
-            $inputVector = array_merge($inputVector, $oneHot);
-        }
-
-        // One-hot encode target
-        $targetVector = array_fill(0, $vocabSize, 0.0);
-        $targetVector[$targetToken] = 1.0;
-
+        // Optimization: Store hanya IDs, expand to one-hot during training
         $dataset[] = [
-            'input' => $inputVector,
-            'target' => $targetVector,
-            'input_words' => $tokenizer->decode($paddedContext),
-            'target_word' => $tokenizer->decode([$targetToken])
+            'input_ids' => $paddedContextIds,
+            'target_id' => $targetToken
         ];
     }
 }
 
 echo "Generated " . count($dataset) . " training samples.\n";
 
-// Show a few examples
-for ($i = 0; $i < min(5, count($dataset)); $i++) {
-    echo "  Sample $i: '{$dataset[$i]['input_words']}' -> '{$dataset[$i]['target_word']}'\n";
-}
-
 // Save
-$cleanDataset = array_map(fn($d) => ['input' => $d['input'], 'target' => $d['target']], $dataset);
 file_put_contents(__DIR__ . '/llm_data.json', json_encode([
     'vocabSize' => $vocabSize,
     'contextWindow' => $N,
-    'dataset' => $cleanDataset
+    'dataset' => $dataset
 ]));
 
 file_put_contents(__DIR__ . '/tokenizer.dat', serialize($tokenizer));

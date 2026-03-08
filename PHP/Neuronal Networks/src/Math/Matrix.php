@@ -109,15 +109,23 @@ class Matrix
         }
 
         $result = new self($this->rows, $m->cols);
-        for ($i = 0; $i < $result->rows; $i++) {
-            for ($j = 0; $j < $result->cols; $j++) {
-                $sum = 0;
-                for ($k = 0; $k < $this->cols; $k++) {
-                    $sum += $this->data[$i][$k] * $m->data[$k][$j];
+        
+        // Zero out the result data first (already done by constructor, but for clarity)
+        // Optimization: iterate differently to take advantage of sparse inputs (one-hot)
+        for ($i = 0; $i < $this->rows; $i++) {
+            for ($k = 0; $k < $this->cols; $k++) {
+                $v = $this->data[$i][$k];
+                if ($v == 0.0) continue;
+                
+                for ($j = 0; $j < $m->cols; $j++) {
+                    $mv = $m->data[$k][$j];
+                    if ($mv == 0.0) continue;
+                    
+                    $result->data[$i][$j] += $v * $mv;
                 }
-                $result->data[$i][$j] = $sum;
             }
         }
+        
         return $result;
     }
 
