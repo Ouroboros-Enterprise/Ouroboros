@@ -90,16 +90,16 @@ begin
 end;
 
 function TDense.Forward(Input: TMatrix): TMatrix;
+var
+  MulResult: TMatrix;
 begin
-  // Input comes from previous layer, we don't free it here.
-  // But we might need to free our cache if it's already set.
-  // Actually, we'll assume the Network class manages the "flow" matrices.
-  // The caches are internal.
   if FOutputCache <> nil then FOutputCache.Free;
   if FActivationCache <> nil then FActivationCache.Free;
-  
+
   FInputCache := Input; // Shared reference, don't free
-  FOutputCache := FWeights.Multiply(Input).Add(FBiases);
+  MulResult := FWeights.Multiply(Input);
+  FOutputCache := MulResult.Add(FBiases);
+  MulResult.Free;
   if FActivation <> nil then
   begin
     FActivationCache := FActivation.Forward(FOutputCache);
@@ -215,7 +215,11 @@ begin
   end;
 
   if FOptimizer <> nil then
-    FOptimizer.Update(FLayerId, FWeights, WeightGradients, TMatrix.Create(0,0), TMatrix.Create(0,0), LearningRate)
+  begin
+    temp := TMatrix.Create(0, 0);
+    FOptimizer.Update(FLayerId, FWeights, WeightGradients, temp, temp, LearningRate);
+    temp.Free;
+  end
   else
   begin
     temp := WeightGradients.MultiplyScalar(LearningRate);
@@ -269,7 +273,7 @@ end;
 function TSimpleRNN.Forward(Input: TMatrix): TMatrix;
 var
   t, i: Integer;
-  x, h, preActivation: TMatrix;
+  x, h, preActivation, wx_x, wh_h, sum1: TMatrix;
 begin
   // Cleanup old caches
   for t := 0 to High(FInputs) do FInputs[t].Free;
@@ -290,7 +294,13 @@ begin
     FInputs[t] := x;
     
     // h_t = activation(Wx*x + Wh*h_{t-1} + bh)
-    preActivation := FWx.Multiply(x).Add(FWh.Multiply(h)).Add(FBh);
+    wx_x := FWx.Multiply(x);
+    wh_h := FWh.Multiply(h);
+    sum1 := wx_x.Add(wh_h);
+    preActivation := sum1.Add(FBh);
+    wx_x.Free;
+    wh_h.Free;
+    sum1.Free;
     if FActivation <> nil then
       h := FActivation.Forward(preActivation)
     else
@@ -318,7 +328,7 @@ end;
 
 function TSimpleRNN.Backward(OutputGradient: TMatrix; LearningRate: Double): TMatrix;
 var
-  dWx, dWh, dBh, dInput, dhNext, h, dtanh, da, dx, temp: TMatrix;
+  dWx, dWh, dBh, dInput, dhNext, h, dtanh, da, dx, temp, old: TMatrix;
   t, k, sequenceLength: Integer;
 begin
   sequenceLength := Length(FInputs);
@@ -343,20 +353,26 @@ begin
     da := dhNext.MultiplyElementWise(dtanh);
     dtanh.Free;
     
-    temp := da.Multiply(FInputs[t].Transpose);
-    dWx := dWx.Add(temp); temp.Free;
-    
-    temp := da.Multiply(FHiddenStates[t].Transpose);
-    dWh := dWh.Add(temp); temp.Free;
-    
-    dBh := dBh.Add(da);
-    
-    dx := FWx.Transpose.Multiply(da);
+    temp := FInputs[t].Transpose;
+    old := da.Multiply(temp); temp.Free;
+    temp := dWx; dWx := temp.Add(old); temp.Free; old.Free;
+
+    temp := FHiddenStates[t].Transpose;
+    old := da.Multiply(temp); temp.Free;
+    temp := dWh; dWh := temp.Add(old); temp.Free; old.Free;
+
+    old := dBh; dBh := old.Add(da); old.Free;
+
+    temp := FWx.Transpose;
+    dx := temp.Multiply(da);
+    temp.Free;
     for k := 0 to dx.Rows - 1 do
       dInput.SetValue(t, k, dx.Data[k]);
     dx.Free;
       
-    temp := FWh.Transpose.Multiply(da);
+    old := FWh.Transpose;
+    temp := old.Multiply(da);
+    old.Free;
     if dhNext <> OutputGradient then dhNext.Free; // Free previous dhNext if it was internal
     dhNext := temp;
     da.Free;
@@ -370,7 +386,9 @@ begin
   if FOptimizer <> nil then
   begin
     FOptimizer.Update(FLayerId + '_Wx', FWx, dWx, FBh, dBh, LearningRate);
-    FOptimizer.Update(FLayerId + '_Wh', FWh, dWh, TMatrix.Create(0,0), TMatrix.Create(0,0), LearningRate);
+    temp := TMatrix.Create(0, 0);
+    FOptimizer.Update(FLayerId + '_Wh', FWh, dWh, temp, temp, LearningRate);
+    temp.Free;
   end
   else
   begin
