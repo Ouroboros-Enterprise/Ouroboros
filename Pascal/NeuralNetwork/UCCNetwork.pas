@@ -5,7 +5,7 @@ unit UCCNetwork;
 interface
 
 uses
-  SysUtils, Math, UCCMatrix, UCCLayers, UCCLosses, UCCOptimizers, UCCTypes;
+  Classes, SysUtils, Math, UCCMatrix, UCCLayers, UCCLosses, UCCOptimizers, UCCTypes;
 
 type
   TNetwork = class
@@ -24,6 +24,10 @@ type
     
     function GetTotalParameters: Integer;
     procedure Train(const Inputs, Targets: TMatrixArray; Epochs: Integer; LearningRate: Double);
+    function Predict(Input: TMatrix): TMatrix;
+    
+    procedure Save(const FileName: string);
+    procedure Load(const FileName: string);
   end;
 
 implementation
@@ -65,14 +69,20 @@ end;
 procedure TNetwork.Backward(OutputGradient: TMatrix; LearningRate: Double);
 var
   i: Integer;
-  Gradient: TMatrix;
+  PrevGradient, NextGradient: TMatrix;
 begin
   if FOptimizer <> nil then
     FOptimizer.IncrementStep;
     
-  Gradient := OutputGradient;
+  NextGradient := OutputGradient;
   for i := Length(FLayers) - 1 downto 0 do
-    Gradient := FLayers[i].Backward(Gradient, LearningRate);
+  begin
+    PrevGradient := NextGradient;
+    NextGradient := FLayers[i].Backward(PrevGradient, LearningRate);
+    if PrevGradient <> OutputGradient then
+      PrevGradient.Free;
+  end;
+  NextGradient.Free; // Final input gradient
 end;
 
 function TNetwork.GetTotalParameters: Integer;
@@ -106,6 +116,44 @@ begin
     
     if (Epoch = 1) or (Epoch mod 10 = 0) then
       WriteLn(Format('Epoch %d/%d - Loss: %f', [Epoch, Epochs, TotalLoss / Length(Inputs)]));
+  end;
+end;
+
+function TNetwork.Predict(Input: TMatrix): TMatrix;
+begin
+  Result := Forward(Input);
+end;
+
+procedure TNetwork.Save(const FileName: string);
+var
+  Stream: TFileStream;
+  i, LayerCount: Integer;
+begin
+  Stream := TFileStream.Create(FileName, fmCreate);
+  try
+    LayerCount := Length(FLayers);
+    Stream.Write(LayerCount, SizeOf(Integer));
+    for i := 0 to LayerCount - 1 do
+      FLayers[i].Save(Stream);
+  finally
+    Stream.Free;
+  end;
+end;
+
+procedure TNetwork.Load(const FileName: string);
+var
+  Stream: TFileStream;
+  i, LayerCount: Integer;
+begin
+  Stream := TFileStream.Create(FileName, fmOpenRead);
+  try
+    Stream.Read(LayerCount, SizeOf(Integer));
+    if LayerCount <> Length(FLayers) then
+      raise Exception.Create('Model file layer count mismatch');
+    for i := 0 to LayerCount - 1 do
+      FLayers[i].Load(Stream);
+  finally
+    Stream.Free;
   end;
 end;
 

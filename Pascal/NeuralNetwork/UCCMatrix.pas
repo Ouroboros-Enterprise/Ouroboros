@@ -5,7 +5,7 @@ unit UCCMatrix;
 interface
 
 uses
-  SysUtils, Math, UCCTypes;
+  Classes, SysUtils, Math, UCCTypes;
 
 type
   TMapFunc = function(Val: Double; Row, Col: Integer): Double;
@@ -34,6 +34,9 @@ type
     function Map(Func: TMapFunc): TMatrix;
     procedure Randomize(MinVal: Double = -1.0; MaxVal: Double = 1.0);
     procedure Clip(Limit: Double);
+    
+    procedure SaveToStream(Stream: TStream);
+    procedure LoadFromStream(Stream: TStream);
     
     // Performance helper
     procedure SetValue(R, C: Integer; V: Double); inline;
@@ -194,6 +197,30 @@ var
 begin
   for i := 0 to Rows * Cols - 1 do
     Data[i] := Max(-Limit, Min(Limit, Data[i]));
+end;
+
+procedure TMatrix.SaveToStream(Stream: TStream);
+begin
+  Stream.Write(Rows, SizeOf(Integer));
+  Stream.Write(Cols, SizeOf(Integer));
+  if (Rows * Cols > 0) then
+    Stream.Write(Data[0], Rows * Cols * SizeOf(Double));
+end;
+
+procedure TMatrix.LoadFromStream(Stream: TStream);
+var
+  R, C: Integer;
+begin
+  Stream.Read(R, SizeOf(Integer));
+  Stream.Read(C, SizeOf(Integer));
+  if (R <> Rows) or (C <> Cols) then
+  begin
+    Rows := R;
+    Cols := C;
+    SetLength(Data, Rows * Cols);
+  end;
+  if (Rows * Cols > 0) then
+    Stream.Read(Data[0], Rows * Cols * SizeOf(Double));
 end;
 
 end.

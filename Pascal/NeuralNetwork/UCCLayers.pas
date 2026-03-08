@@ -5,7 +5,7 @@ unit UCCLayers;
 interface
 
 uses
-  SysUtils, Math, UCCMatrix, UCCActivations, UCCOptimizers, UCCTypes;
+  Classes, SysUtils, Math, UCCMatrix, UCCActivations, UCCOptimizers, UCCTypes;
 
 type
   ILayer = interface
@@ -13,6 +13,8 @@ type
     function Backward(OutputGradient: TMatrix; LearningRate: Double): TMatrix;
     function GetParameterCount: Integer;
     procedure SetOptimizer(const Id: string; Opt: IOptimizer);
+    procedure Save(Stream: TStream);
+    procedure Load(Stream: TStream);
   end;
 
   TDense = class(TInterfacedObject, ILayer)
@@ -24,10 +26,13 @@ type
     FInputCache, FOutputCache, FActivationCache: TMatrix;
   public
     constructor Create(InputSize, OutputSize: Integer; Act: IActivation = nil);
+    destructor Destroy; override;
     function Forward(Input: TMatrix): TMatrix;
     function Backward(OutputGradient: TMatrix; LearningRate: Double): TMatrix;
     function GetParameterCount: Integer;
     procedure SetOptimizer(const Id: string; Opt: IOptimizer);
+    procedure Save(Stream: TStream);
+    procedure Load(Stream: TStream);
   end;
 
   TEmbedding = class(TInterfacedObject, ILayer)
@@ -38,10 +43,13 @@ type
     FInputCache: TMatrix;
   public
     constructor Create(VocabSize, EmbeddingDim: Integer);
+    destructor Destroy; override;
     function Forward(Input: TMatrix): TMatrix;
     function Backward(OutputGradient: TMatrix; LearningRate: Double): TMatrix;
     function GetParameterCount: Integer;
     procedure SetOptimizer(const Id: string; Opt: IOptimizer);
+    procedure Save(Stream: TStream);
+    procedure Load(Stream: TStream);
   end;
 
   TSimpleRNN = class(TInterfacedObject, ILayer)
@@ -53,10 +61,13 @@ type
     FInputs, FHiddenStates: TMatrixArray;
   public
     constructor Create(InputSize, HiddenSize: Integer; Act: IActivation = nil);
+    destructor Destroy; override;
     function Forward(Input: TMatrix): TMatrix;
     function Backward(OutputGradient: TMatrix; LearningRate: Double): TMatrix;
     function GetParameterCount: Integer;
     procedure SetOptimizer(const Id: string; Opt: IOptimizer);
+    procedure Save(Stream: TStream);
+    procedure Load(Stream: TStream);
   end;
 
 implementation
@@ -80,7 +91,14 @@ end;
 
 function TDense.Forward(Input: TMatrix): TMatrix;
 begin
-  FInputCache := Input;
+  // Input comes from previous layer, we don't free it here.
+  // But we might need to free our cache if it's already set.
+  // Actually, we'll assume the Network class manages the "flow" matrices.
+  // The caches are internal.
+  if FOutputCache <> nil then FOutputCache.Free;
+  if FActivationCache <> nil then FActivationCache.Free;
+  
+  FInputCache := Input; // Shared reference, don't free
   FOutputCache := FWeights.Multiply(Input).Add(FBiases);
   if FActivation <> nil then
   begin
@@ -93,32 +111,62 @@ end;
 
 function TDense.Backward(OutputGradient: TMatrix; LearningRate: Double): TMatrix;
 var
-  ActDeriv, WeightGradients, InputGradient: TMatrix;
+  ActDeriv, WeightGradients, InputGradient, Trans, temp: TMatrix;
 begin
   if FActivation <> nil then
   begin
     ActDeriv := FActivation.Derivative(FActivationCache);
     OutputGradient := OutputGradient.MultiplyElementWise(ActDeriv);
+    ActDeriv.Free;
   end;
 
-  WeightGradients := OutputGradient.Multiply(FInputCache.Transpose);
-  InputGradient := FWeights.Transpose.Multiply(OutputGradient);
+  Trans := FInputCache.Transpose;
+  WeightGradients := OutputGradient.Multiply(Trans);
+  Trans.Free;
+  
+  Trans := FWeights.Transpose;
+  InputGradient := Trans.Multiply(OutputGradient);
+  Trans.Free;
 
   if FOptimizer <> nil then
     FOptimizer.Update(FLayerId, FWeights, WeightGradients, FBiases, OutputGradient, LearningRate)
   else
   begin
-    // Simple SGD fallback if no optimizer set
-    FWeights := FWeights.Subtract(WeightGradients.MultiplyScalar(LearningRate));
-    FBiases := FBiases.Subtract(OutputGradient.MultiplyScalar(LearningRate));
+    temp := WeightGradients.MultiplyScalar(LearningRate);
+    FWeights := FWeights.Subtract(temp); temp.Free;
+    
+    temp := OutputGradient.MultiplyScalar(LearningRate);
+    FBiases := FBiases.Subtract(temp); temp.Free;
   end;
 
+  WeightGradients.Free;
   Result := InputGradient;
+end;
+
+destructor TDense.Destroy;
+begin
+  FWeights.Free;
+  FBiases.Free;
+  if FOutputCache <> nil then FOutputCache.Free;
+  if FActivationCache <> nil then FActivationCache.Free;
+  inherited;
 end;
 
 function TDense.GetParameterCount: Integer;
 begin
   Result := (FWeights.Rows * FWeights.Cols) + (FBiases.Rows * FBiases.Cols);
+end;
+
+procedure TDense.Save(Stream: TStream);
+begin
+  FWeights.SaveToStream(Stream);
+  FBiases.SaveToStream(Stream);
+end;
+
+procedure TDense.Load(Stream: TStream);
+begin
+  FWeights.LoadFromStream(Stream);
+  FBiases.LoadFromStream(Stream);
 end;
 
 { TEmbedding }
@@ -151,7 +199,7 @@ end;
 
 function TEmbedding.Backward(OutputGradient: TMatrix; LearningRate: Double): TMatrix;
 var
-  WeightGradients: TMatrix;
+  WeightGradients, temp: TMatrix;
   i, j, TokenId: Integer;
 begin
   WeightGradients := TMatrix.Create(FWeights.Rows, FWeights.Cols);
@@ -169,14 +217,34 @@ begin
   if FOptimizer <> nil then
     FOptimizer.Update(FLayerId, FWeights, WeightGradients, TMatrix.Create(0,0), TMatrix.Create(0,0), LearningRate)
   else
-    FWeights := FWeights.Subtract(WeightGradients.MultiplyScalar(LearningRate));
+  begin
+    temp := WeightGradients.MultiplyScalar(LearningRate);
+    FWeights := FWeights.Subtract(temp); temp.Free;
+  end;
 
+  WeightGradients.Free;
   Result := TMatrix.Create(FInputCache.Rows, FInputCache.Cols); // Input is discrete, usually 0 gradient
+end;
+
+destructor TEmbedding.Destroy;
+begin
+  FWeights.Free;
+  inherited;
 end;
 
 function TEmbedding.GetParameterCount: Integer;
 begin
   Result := FWeights.Rows * FWeights.Cols;
+end;
+
+procedure TEmbedding.Save(Stream: TStream);
+begin
+  FWeights.SaveToStream(Stream);
+end;
+
+procedure TEmbedding.Load(Stream: TStream);
+begin
+  FWeights.LoadFromStream(Stream);
 end;
 
 { TSimpleRNN }
@@ -203,6 +271,10 @@ var
   t, i: Integer;
   x, h, preActivation: TMatrix;
 begin
+  // Cleanup old caches
+  for t := 0 to High(FInputs) do FInputs[t].Free;
+  for t := 0 to High(FHiddenStates) do FHiddenStates[t].Free;
+  
   // Assume Input is InputSize x SequenceLength
   SetLength(FInputs, Input.Cols);
   SetLength(FHiddenStates, Input.Cols + 1);
@@ -224,14 +296,29 @@ begin
     else
       h := preActivation;
     
+    if FActivation = nil then // if we didn't use an activation, preActivation is h
+    begin
+       // in this case we don't free preActivation separately
+    end else preActivation.Free;
+
     FHiddenStates[t+1] := h;
   end;
   Result := h;
 end;
 
+destructor TSimpleRNN.Destroy;
+var
+  i: Integer;
+begin
+  FWx.Free; FWh.Free; FBh.Free;
+  for i := 0 to High(FInputs) do FInputs[i].Free;
+  for i := 0 to High(FHiddenStates) do FHiddenStates[i].Free;
+  inherited;
+end;
+
 function TSimpleRNN.Backward(OutputGradient: TMatrix; LearningRate: Double): TMatrix;
 var
-  dWx, dWh, dBh, dInput, dhNext, h, dtanh, da, dx: TMatrix;
+  dWx, dWh, dBh, dInput, dhNext, h, dtanh, da, dx, temp: TMatrix;
   t, k, sequenceLength: Integer;
 begin
   sequenceLength := Length(FInputs);
@@ -240,7 +327,7 @@ begin
   dBh := TMatrix.Create(FBh.Rows, FBh.Cols);
   dInput := TMatrix.Create(sequenceLength, FWx.Cols);
   
-  dhNext := OutputGradient;
+  dhNext := OutputGradient; // Initial gradient from above
   
   for t := sequenceLength - 1 downto 0 do
   begin
@@ -254,18 +341,28 @@ begin
     end;
     
     da := dhNext.MultiplyElementWise(dtanh);
+    dtanh.Free;
     
-    dWx := dWx.Add(da.Multiply(FInputs[t].Transpose));
-    dWh := dWh.Add(da.Multiply(FHiddenStates[t].Transpose));
+    temp := da.Multiply(FInputs[t].Transpose);
+    dWx := dWx.Add(temp); temp.Free;
+    
+    temp := da.Multiply(FHiddenStates[t].Transpose);
+    dWh := dWh.Add(temp); temp.Free;
+    
     dBh := dBh.Add(da);
     
     dx := FWx.Transpose.Multiply(da);
     for k := 0 to dx.Rows - 1 do
       dInput.SetValue(t, k, dx.Data[k]);
+    dx.Free;
       
-    dhNext := FWh.Transpose.Multiply(da);
+    temp := FWh.Transpose.Multiply(da);
+    if dhNext <> OutputGradient then dhNext.Free; // Free previous dhNext if it was internal
+    dhNext := temp;
+    da.Free;
   end;
-  
+  if dhNext <> OutputGradient then dhNext.Free;
+
   dWx.Clip(1.0);
   dWh.Clip(1.0);
   dBh.Clip(1.0);
@@ -277,17 +374,37 @@ begin
   end
   else
   begin
-    FWx := FWx.Subtract(dWx.MultiplyScalar(LearningRate));
-    FWh := FWh.Subtract(dWh.MultiplyScalar(LearningRate));
-    FBh := FBh.Subtract(dBh.MultiplyScalar(LearningRate));
+    temp := dWx.MultiplyScalar(LearningRate);
+    FWx := FWx.Subtract(temp); temp.Free;
+    
+    temp := dWh.MultiplyScalar(LearningRate);
+    FWh := FWh.Subtract(temp); temp.Free;
+    
+    temp := dBh.MultiplyScalar(LearningRate);
+    FBh := FBh.Subtract(temp); temp.Free;
   end;
   
+  dWx.Free; dWh.Free; dBh.Free;
   Result := dInput;
 end;
 
 function TSimpleRNN.GetParameterCount: Integer;
 begin
   Result := (FWx.Rows * FWx.Cols) + (FWh.Rows * FWh.Cols) + (FBh.Rows * FBh.Cols);
+end;
+
+procedure TSimpleRNN.Save(Stream: TStream);
+begin
+  FWx.SaveToStream(Stream);
+  FWh.SaveToStream(Stream);
+  FBh.SaveToStream(Stream);
+end;
+
+procedure TSimpleRNN.Load(Stream: TStream);
+begin
+  FWx.LoadFromStream(Stream);
+  FWh.LoadFromStream(Stream);
+  FBh.LoadFromStream(Stream);
 end;
 
 end.
