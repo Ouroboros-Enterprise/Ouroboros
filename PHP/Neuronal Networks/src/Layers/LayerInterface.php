@@ -24,4 +24,9 @@ interface LayerInterface
      * Set an optimizer for this layer
      */
     public function setOptimizer(string $id, \NeuralNet\Optimizers\OptimizerInterface $optimizer): void;
+
+    /**
+     * Get the number of trainable parameters in this layer
+     */
+    public function getParameterCount(): int;
 }

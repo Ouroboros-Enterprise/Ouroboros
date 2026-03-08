@@ -86,4 +86,9 @@ class Dense implements LayerInterface
 
         return $inputGradient;
     }
+
+    public function getParameterCount(): int
+    {
+        return ($this->weights->rows * $this->weights->cols) + ($this->biases->rows * $this->biases->cols);
+    }
 }

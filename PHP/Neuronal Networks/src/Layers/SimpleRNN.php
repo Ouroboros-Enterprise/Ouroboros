@@ -55,17 +55,18 @@ class SimpleRNN implements LayerInterface
      */
     public function forward(Matrix $input): Matrix
     {
-        // Now handling input as a list of vectors (arrays or matrices)
-        // If input is context sequence: [[one-hot], [one-hot], ...]
-        if (is_array($input->data[0][0])) {
-             // Handle case if wrapper passed it weirdly
-             $inputList = $input->data[0];
+        // Handling input as a list of vectors (arrays or matrices)
+        // Check if input is a wrapper Matrix where data[0] contains the sequence
+        if (isset($input->data[0]) && is_array($input->data[0]) && count($input->data[0]) > 0) {
+             // If data[0][0] is an array or Matrix, then data[0] is our sequence
+             $first = $input->data[0][0];
+             if (is_array($first) || $first instanceof Matrix) {
+                 $inputList = $input->data[0];
+             } else {
+                 // It's a single sample vector passed as a row
+                 $inputList = [$input->data[0]];
+             }
         } else {
-             // Assuming input here is effectively a "Matrix of Vectors" or we handle raw array
-             // Let's refine for consistency: Expect an object or array that we can iterate.
-             // Actually, Matrix::fromArray of a 2D array gives us a Matrix where each row is a sample.
-             // But for RNN, we want 3D (Seq x Input x 1).
-             // Let's modify forward to accept array directly if needed or handle the Matrix wrapper.
              $inputList = $input->data; 
         }
 
@@ -75,7 +76,11 @@ class SimpleRNN implements LayerInterface
         $h = $this->hiddenStates[-1];
 
         foreach ($inputList as $t => $vec) {
-            $x = Matrix::fromArray($vec);
+            $x = ($vec instanceof Matrix) ? $vec : Matrix::fromArray($vec);
+            // Ensure $x is a column vector
+            if ($x->rows === 1 && $x->cols > 1) {
+                $x = $x->transpose();
+            }
             $this->inputs[$t] = $x;
 
             // h_t = activation(Wx*x + Wh*h_{t-1} + bh)
@@ -98,10 +103,10 @@ class SimpleRNN implements LayerInterface
         $dWx = new Matrix($this->hiddenSize, $this->inputSize);
         $dWh = new Matrix($this->hiddenSize, $this->hiddenSize);
         $dbh = new Matrix($this->hiddenSize, 1);
-        $dInput = new Matrix($this->inputSize * count($this->inputs), 1);
+        $sequenceLength = count($this->inputs);
+        $dInput = new Matrix($sequenceLength, $this->inputSize);
         
         $dhNext = $outputGradient;
-        $sequenceLength = count($this->inputs);
 
         for ($t = $sequenceLength - 1; $t >= 0; $t--) {
             // Gradient through activation
@@ -117,7 +122,7 @@ class SimpleRNN implements LayerInterface
             // Gradient for input
             $dx = $this->Wx->transpose()->multiply($da);
             for ($k = 0; $k < $this->inputSize; $k++) {
-                $dInput->data[$t * $this->inputSize + $k][0] = $dx->data[$k][0];
+                $dInput->data[$t][$k] = $dx->data[$k][0];
             }
 
             // dh_prev for next iteration
@@ -154,5 +159,10 @@ class SimpleRNN implements LayerInterface
                 $m->data[$i][$j] = max(-$limit, min($limit, $m->data[$i][$j]));
             }
         }
+    }
+
+    public function getParameterCount(): int
+    {
+        return ($this->Wx->rows * $this->Wx->cols) + ($this->Wh->rows * $this->Wh->cols) + ($this->bh->rows * $this->bh->cols);
     }
 }

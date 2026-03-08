@@ -65,16 +65,38 @@ class Network
         return $output->toArray();
     }
 
-    public function train(iterable $trainingData, int $epochs, float $learningRate, float $lrDecay = 0.0, ?int $sampleCount = null): void
+    public function getTotalParameters(): int
     {
-        if (!$this->lossFunction) {
+        $total = 0;
+        foreach ($this->layers as $layer) {
+            $total += $layer->getParameterCount();
+        }
+        return $total;
+    }
+
+    public function getLayerSummary(): string
+    {
+        $summary = "--- Model Summary ---\n";
+        foreach ($this->layers as $i => $layer) {
+            $class = (new \ReflectionClass($layer))->getShortName();
+            $params = number_format($layer->getParameterCount());
+            $summary .= "Layer $i ($class): $params parameters\n";
+        }
+        $summary .= "Total Parameters: " . number_format($this->getTotalParameters()) . "\n";
+        $summary .= "---------------------\n";
+        return $summary;
+    }
+
+    public function train(iterable $trainingData, int $epochs, float $learningRate, float $lrDecay = 0.0): void
+    {
+        if ($this->lossFunction === null) {
             throw new \Exception("Loss function not set.");
         }
 
-        $effectiveSampleCount = $sampleCount;
-        if ($effectiveSampleCount === null && is_countable($trainingData)) {
-            $effectiveSampleCount = count($trainingData);
-        }
+        echo $this->getLayerSummary();
+
+        // Determine effective sample count
+        $effectiveSampleCount = is_countable($trainingData) ? count($trainingData) : null;
 
         $startTime = microtime(true);
 

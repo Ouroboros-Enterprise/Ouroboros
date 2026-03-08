@@ -34,24 +34,17 @@ class OnTheFlyDataset implements Iterator, Countable {
     public function current(): array {
         $sample = $this->dataset[$this->position];
         
-        // For RNN, input is a sequence of one-hot vectors.
-        // Each element in the sequence is a one-hot vector of vocabSize.
-        // The SimpleRNN layer expects an array of these vectors.
-        $inputSequence = [];
-        foreach ($sample['input_ids'] as $id) {
-            $oneHot = array_fill(0, $this->vocabSize, 0.0);
-            $oneHot[$id] = 1.0;
-            $inputSequence[] = $oneHot;
-        }
+        // Return token IDs directly - the Embedding layer handles the lookup
+        $inputIds = $sample['input_ids'];
 
         $targetVector = array_fill(0, $this->vocabSize, 0.0);
         $targetVector[$sample['target_id']] = 1.0;
 
-        return ['input' => $inputSequence, 'target' => $targetVector];
+        return ['input' => $inputIds, 'target' => $targetVector];
     }
 }
 
-echo "--- Chat SLM Trainer (RNN + Adam) ---\n";
+echo "--- Chat SLM Trainer (Embedding + RNN + Adam) ---\n";
 
 $dataFile = __DIR__ . '/llm_data.json';
 if (!file_exists($dataFile)) {
@@ -64,11 +57,13 @@ $N = $data['contextWindow'];
 $datasetIds = $data['dataset']; // Use full dataset for RNN training
 
 
-// Neural Network Architecture: RNN for context, Dense for prediction
+// Neural Network Architecture: Embedding -> RNN -> Dense
+$embeddingDim = 32;
 $hiddenSize = 64; 
 
 $nn = new Network();
-$nn->addLayer(new \NeuralNet\Layers\SimpleRNN($vocabSize, $hiddenSize, new \NeuralNet\Activations\Tanh()));
+$nn->addLayer(new \NeuralNet\Layers\Embedding($vocabSize, $embeddingDim));
+$nn->addLayer(new \NeuralNet\Layers\SimpleRNN($embeddingDim, $hiddenSize, new \NeuralNet\Activations\Tanh()));
 $nn->addLayer(new \NeuralNet\Layers\Dense($hiddenSize, $vocabSize, new \NeuralNet\Activations\Softmax()));
 
 // Use Adam Optimizer for significantly faster/stable convergence
