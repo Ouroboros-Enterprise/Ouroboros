@@ -29,4 +29,13 @@ interface LayerInterface
      * Get the number of trainable parameters in this layer
      */
     public function getParameterCount(): int;
+    /**
+     * Get the trainable parameters (weights, biases) for this layer
+     */
+    public function getParameters(): array;
+
+    /**
+     * Set the trainable parameters for this layer
+     */
+    public function setParameters(array $params): void;
 }

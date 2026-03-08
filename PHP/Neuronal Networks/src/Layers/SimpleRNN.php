@@ -165,4 +165,20 @@ class SimpleRNN implements LayerInterface
     {
         return ($this->Wx->rows * $this->Wx->cols) + ($this->Wh->rows * $this->Wh->cols) + ($this->bh->rows * $this->bh->cols);
     }
+
+    public function getParameters(): array
+    {
+        return [
+            'Wx' => $this->Wx->data,
+            'Wh' => $this->Wh->data,
+            'bh' => $this->bh->data
+        ];
+    }
+
+    public function setParameters(array $params): void
+    {
+        $this->Wx->data = $params['Wx'];
+        $this->Wh->data = $params['Wh'];
+        $this->bh->data = $params['bh'];
+    }
 }

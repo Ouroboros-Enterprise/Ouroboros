@@ -91,4 +91,18 @@ class Dense implements LayerInterface
     {
         return ($this->weights->rows * $this->weights->cols) + ($this->biases->rows * $this->biases->cols);
     }
+
+    public function getParameters(): array
+    {
+        return [
+            'weights' => $this->weights->data,
+            'biases' => $this->biases->data
+        ];
+    }
+
+    public function setParameters(array $params): void
+    {
+        $this->weights->data = $params['weights'];
+        $this->biases->data = $params['biases'];
+    }
 }
