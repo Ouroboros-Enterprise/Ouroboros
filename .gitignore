@@ -54,3 +54,6 @@ PHP/NeuronalNetworks/examples/LLM/llm_data.json
 
 # C++
 build/
+
+# Python
+__pycache__/

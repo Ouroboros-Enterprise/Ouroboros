@@ -22,5 +22,11 @@
         "**/*.ppu": true,
         "**/*.compiled": true,
         "**/*.or": true
+    },
+    "python-envs.defaultEnvManager": "C:/Python314/python.exe",
+    "python-envs.pythonProjects": [],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
     }
 }
