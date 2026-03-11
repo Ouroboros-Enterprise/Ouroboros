@@ -57,3 +57,6 @@ build/
 
 # Python
 __pycache__/
+
+# Rust
+target/

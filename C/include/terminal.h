@@ -30,4 +30,4 @@ static ALWAYS_INLINE void clear_display()
     fflush(stdout);
 }
 
-#endif
+#endif // TERMINAL_H

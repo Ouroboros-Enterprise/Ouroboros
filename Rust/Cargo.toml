@@ -1,0 +1,11 @@
+[package]
+name = "Ouroboros"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rand = "0.8.0"
+
+[target.'cfg(unix)'.dependencies]
+termios = "0.3"
+select = "0.6.1"

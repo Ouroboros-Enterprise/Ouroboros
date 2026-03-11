@@ -128,4 +128,4 @@ static ALWAYS_INLINE void game_over()
     printf("        \\___/ \\_/\\___|_|     \n");
 }
 
-#endif
+#endif // GUI_H
