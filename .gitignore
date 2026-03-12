@@ -60,3 +60,15 @@ __pycache__/
 
 # Rust
 target/
+
+# C#
+[Bb]in/
+[Ob]j/
+obj/
+
+publish/
+*.exp
+.docfx/
+.ionide/
+project.lock.json
+project.fragment.lock.json

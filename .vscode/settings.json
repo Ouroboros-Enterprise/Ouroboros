@@ -6,6 +6,9 @@
         "*.lpr": "pascal"
     },
     "editor.formatOnSave": true,
+    "editor.semanticHighlighting.enabled": true,
+    "editor.inlineSuggest.enabled": false,
+    "dotnet.defaultSolution": "CSharp/Ouroboros.CSharp.slnx",
     "[pascal]": {
         // Hier ist die ID für den Formatter von Alessandro Fragnani:
         "editor.defaultFormatter": "alefragnani.pascal",
@@ -28,5 +31,8 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.formatOnSave": true
+    },
+    "[csharp]": {
+        "editor.semanticHighlighting.enabled": true
     }
 }
