@@ -34,5 +34,17 @@
     },
     "[csharp]": {
         "editor.semanticHighlighting.enabled": true
-    }
+    },
+    "java.format.enabled": true,
+    "java.format.settings.url": "${workspaceFolder}/.vscode/java-style.xml",
+    "java.format.settings.profile": "GoogleStyle",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.project.sourcePaths": [
+        "Java/src"
+    ],
+    "java.project.outputPath": "Java/out",
+    "[java]": {
+        "editor.defaultFormatter": "redhat.java",
+        "editor.formatOnSave": true
+    },
 }

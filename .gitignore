@@ -72,3 +72,15 @@ publish/
 .ionide/
 project.lock.json
 project.fragment.lock.json
+
+
+# Java
+out/
+*.class
+*.log
+*.jar
+*.war
+*.ear
+gen/
+bin/
+.settings/

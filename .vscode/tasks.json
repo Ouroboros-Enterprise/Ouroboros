@@ -5,11 +5,37 @@
             "label": "Compile Pascal",
             "type": "shell",
             "command": "fpc",
-            "args": ["${file}"],
+            "args": [
+                "${file}"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "Compile Java",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/Java/run.ps1",
+                "-CompileOnly"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "Run Java",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/Java/run.ps1"
+            ]
         }
     ]
 }

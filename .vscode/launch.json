@@ -2,10 +2,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "com.ouroboros.Main",
+            "projectName": "ouroboros-java"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "com.ouroboros.Main",
+            "projectName": "Ouroboros_355d5565"
+        },
+        {
             "name": "Pascal: Debug/Run",
             "type": "cppdbg",
             "request": "launch",
-            // Name der .exe (unter Windows) oder Binärdatei (Linux/Mac)
             "program": "${fileDirname}/${fileBasenameNoExtension}.exe",
             "args": [],
             "stopAtEntry": false,
