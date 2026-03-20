@@ -1,3 +1,5 @@
+#pragma once
+
 #include "apple.hpp"
 #include "gui.hpp"
 #include "input.hpp"

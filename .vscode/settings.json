@@ -53,7 +53,7 @@
         "editor.defaultFormatter": "redhat.java",
         "editor.formatOnSave": true
     },
-    "C_Cpp.formatting": "clangFormat",
+    "C_Cpp.formatting": "clang-format",
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
     },
