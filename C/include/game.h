@@ -10,8 +10,10 @@
 #include "snake.h"
 #include "terminal.h"
 
+#ifdef _WIN32
 #include <conio.h>
 #include <corecrt.h>
+#endif
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>

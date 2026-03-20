@@ -7,7 +7,13 @@
     },
     "editor.formatOnSave": true,
     "editor.semanticHighlighting.enabled": true,
-    "editor.inlineSuggest.enabled": false,
+    "editor.inlineSuggest.enabled": true,
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": false,
+        "strings": true
+    },
+    "editor.suggestOnTriggerCharacters": true,
     "dotnet.defaultSolution": "CSharp/Ouroboros.CSharp.slnx",
     "[pascal]": {
         // Hier ist die ID für den Formatter von Alessandro Fragnani:
@@ -46,5 +52,9 @@
     "[java]": {
         "editor.defaultFormatter": "redhat.java",
         "editor.formatOnSave": true
+    },
+    "C_Cpp.formatting": "clangFormat",
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
     },
 }

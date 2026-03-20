@@ -1,5 +1,3 @@
-#pragma once
-
 #include "apple.hpp"
 #include "gui.hpp"
 #include "input.hpp"
@@ -8,7 +6,10 @@
 #include "snake.hpp"
 
 #include <chrono>
+
+#ifdef _WIN32
 #include <conio.h>
+#endif
 #include <ostream>
 #include <thread>
 

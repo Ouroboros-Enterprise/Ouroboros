@@ -1,5 +1,3 @@
-#pragma once
-
 #include "include/game.hpp"
 #include "include/input.hpp"
 #include "include/rng.hpp"
