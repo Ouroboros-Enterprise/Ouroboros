@@ -25,6 +25,8 @@
 # Fortran module files
 *.mod
 *.smod
+!**/go.mod
+!**/go.sum
 
 # Compiled Static libraries
 *.lai
@@ -84,3 +86,13 @@ out/
 gen/
 bin/
 .settings/
+
+# Kotlin
+.gradle
+gradlew
+gradlew.bat
+**/gradle/wrapper/
+
+# TypeScript
+node_modules/
+dist/

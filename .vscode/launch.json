@@ -34,6 +34,26 @@
                 }
             ],
             "preLaunchTask": "Pascal: Build current file"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Ouroboros}/Swift",
+            "name": "Debug Ouroboros (Swift)",
+            "target": "Ouroboros",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug Ouroboros (Swift)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Ouroboros}/Swift",
+            "name": "Release Ouroboros (Swift)",
+            "target": "Ouroboros",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release Ouroboros (Swift)"
         }
     ]
 }

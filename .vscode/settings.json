@@ -45,16 +45,33 @@
     "java.format.settings.url": "${workspaceFolder}/.vscode/java-style.xml",
     "java.format.settings.profile": "GoogleStyle",
     "java.configuration.updateBuildConfiguration": "automatic",
-    "java.project.sourcePaths": [
-        "Java/src"
+    "java.import.gradle.enabled": true,
+    "java.import.maven.enabled": true,
+    "kotlin.languageServer.enabled": true,
+    "kotlin.java.home": "C:/Program Files/Eclipse Adoptium/jdk-17.0.17.10-hotspot",
+    "kotlin.diagnostics.enabled": false,
+    "kotlin.scripts.buildScriptsEnabled": true,
+    "kotlin.languageServer.watchFiles": [
+        "**/*.kt",
+        "**/*.kts",
+        "**/*.java",
+        "**/pom.xml",
+        "**/build.gradle",
+        "**/settings.gradle",
+        "**/build.gradle.kts",
+        "**/settings.gradle.kts"
     ],
-    "java.project.outputPath": "Java/out",
     "[java]": {
         "editor.defaultFormatter": "redhat.java",
         "editor.formatOnSave": true
     },
-    "C_Cpp.formatting": "clang-format",
+    "C_Cpp.formatting": "clangFormat",
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
     },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "prettier.tabWidth": 4,
+        "prettier.useTabs": false
+    }
 }
