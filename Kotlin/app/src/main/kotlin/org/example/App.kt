@@ -3,13 +3,74 @@
  */
 package org.example
 
-class App {
-    val greeting: String
-        get() {
-            return "Hello World!"
-        }
-}
+import kotlin.random.Random
 
 fun main() {
-    println(App().greeting)
+    var playAgain = true
+
+    var start = hashSetOf(" ", "\n", "\r\n", "\r")
+    var quit = hashSetOf("q", "Q", "\u001B")
+    var retry = hashSetOf("r", "R")
+
+    while (playAgain) {
+        Terminal.clearDisplay()
+
+        println("--- OUROBOROS Kotlin ---")
+        println("Press SPACE to start or 'Q' to Quit...")
+
+        while (true) {
+            val input = Input.getKeyPress()
+
+            if (input != null) {
+                when (input) {
+                    in start -> break
+                    in quit -> {
+                        playAgain = false
+                        break
+                    }
+                }
+            }
+
+            Thread.sleep(10)
+        }
+
+        if (!playAgain) {
+            break
+        }
+
+        val sx = Random.nextInt(0, 20)
+        val sy = Random.nextInt(0, 20)
+
+        Game(sx, sy).start()
+
+        println("\n\nPress 'R' to Retry or 'Q' to Quit...")
+
+        while (true) {
+            val input = Input.getKeyPress()
+
+            if (input != null) {
+                when (input) {
+                    in retry -> break
+                    in quit -> {
+                        playAgain = false
+                        break
+                    }
+                }
+            }
+
+            Thread.sleep(10)
+        }
+    }
+
+    Terminal.hideCursor()
+    println("\nThanks for playing!")
+
+    for (i in 5 downTo 0) {
+        print("\r\u001B[2KClosing in $i seconds...")
+        Thread.sleep(1000)
+    }
+
+    Terminal.showCursor()
+    Input.close()
+    System.exit(0)
 }
