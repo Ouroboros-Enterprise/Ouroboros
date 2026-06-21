@@ -73,5 +73,8 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "prettier.tabWidth": 4,
         "prettier.useTabs": false
-    }
+    },
+    "Lua.diagnostics.disable": [
+        "discard-returns"
+    ]
 }
